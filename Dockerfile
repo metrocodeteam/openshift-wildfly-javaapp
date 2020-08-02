@@ -7,4 +7,4 @@ FROM jboss/wildfly
 ENV JAVA_APP_WAR target/ROOT.war
 ENV AB_OFF true
 EXPOSE 8080
-ADD $JAVA_APP_WAR /opt/wildfly/standalone/deployments/
+ADD $JAVA_APP_WAR /opt/jboss/wildfly/standalone/deployments/ 
