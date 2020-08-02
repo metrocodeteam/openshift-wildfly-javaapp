@@ -3,7 +3,7 @@ COPY . /src
 WORKDIR /src
 RUN mvn clean package -Popenshift
 FROM registry.access.redhat.com/openjdk/openjdk-11-rhel7
-FROM jboss/wildfly
+FROM jboss/wildfly:17.0.0.Final
 ENV JAVA_APP_WAR target/ROOT.war
 ENV AB_OFF true
 EXPOSE 8080
