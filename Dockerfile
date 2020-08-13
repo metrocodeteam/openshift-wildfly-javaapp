@@ -10,6 +10,7 @@ FROM maven:3.6-jdk-11-slim as BUILD
 COPY . /src
 WORKDIR /src
 RUN mvn clean package -Popenshift
+ADD target/ROOT.war /opt/jboss/wildfly/standalone/deployments/ROOT.war
 
 # Install packages necessary to run WildFly
 #RUN yum update -y && yum -y install bsdtar unzip && yum clean all
