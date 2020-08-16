@@ -1,16 +1,14 @@
-#
-# Officially supported Zulu JDK 
-#
-# For support or general questions go to:
-#
-# https://support.microsoft.com/en-us/help/4026305/sql-contact-microsoft-azure-support
-#
 FROM mcr.microsoft.com/java/jdk:8u242-zulu-centos
 FROM maven:3.6-jdk-11-slim as BUILD
 COPY . /src
 WORKDIR /src
 RUN mvn clean package -Popenshift
-
+FROM registry.access.redhat.com/openjdk/openjdk-11-rhel7
+FROM jboss/wildfly:17.0.0.Final
+ENV JAVA_APP_WAR target/ROOT.war
+ENV AB_OFF true
+EXPOSE 8080
+ADD $JAVA_APP_WAR /opt/jboss/wildfly/standalone/deployments/ 
 
 # Install packages necessary to run WildFly
 #RUN yum update -y && yum -y install bsdtar unzip && yum clean all
@@ -19,13 +17,14 @@ RUN mvn clean package -Popenshift
 # The user ID 1000 is the default for the first "regular" user on Fedora/RHEL,
 # so there is a high chance that this ID will be equal to the current user
 # making it easier to use volumes (no permission issues)
-
+RUN groupadd -r jboss -g 1000 && useradd -u 1000 -r -g jboss -m -d /opt/jboss -s /sbin/nologin -c "JBoss user" jboss && \
+    chmod 755 /opt/jboss
 
 # Set the working directory to jboss' user home directory
 WORKDIR /opt/jboss
 
 # Specify the user which should be used to execute all commands below
-
+USER jboss
 
 # Set the WILDFLY_VERSION env variable
 ENV WILDFLY_VERSION 18.0.1.Final
@@ -52,7 +51,6 @@ ENV LAUNCH_JBOSS_IN_BACKGROUND true
 
 # Set the current user for JBoss process
 USER jboss
-USER 1001
 
 # Expose the ports we're interested in
 EXPOSE 8080 9990
