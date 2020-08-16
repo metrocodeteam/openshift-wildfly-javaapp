@@ -1,17 +1,16 @@
+#
+# Officially supported Zulu JDK
+#
+# For support or general questions go to:
+#
+# https://support.microsoft.com/en-us/help/4026305/sql-contact-microsoft-azure-support
+#
 FROM mcr.microsoft.com/java/jdk:8u242-zulu-centos
-FROM maven:3.6-jdk-11-slim as BUILD
-COPY . /src
-WORKDIR /src
-RUN mvn clean package -Popenshift
-FROM registry.access.redhat.com/openjdk/openjdk-11-rhel7
-FROM jboss/wildfly:17.0.0.Final
-ENV JAVA_APP_WAR target/ROOT.war
-ENV AB_OFF true
-EXPOSE 8080
-ADD $JAVA_APP_WAR /opt/jboss/wildfly/standalone/deployments/ 
 
 # Install packages necessary to run WildFly
-#RUN yum update -y && yum -y install bsdtar unzip && yum clean all
+RUN yum update -y && yum -y install bsdtar unzip && yum clean all
+
+USER root
 
 # Create a user and group used to launch processes
 # The user ID 1000 is the default for the first "regular" user on Fedora/RHEL,
@@ -25,6 +24,20 @@ WORKDIR /opt/jboss
 
 # Specify the user which should be used to execute all commands below
 USER jboss
+
+# Appserver
+ENV WILDFLY_USER admin
+ENV WILDFLY_PASS adminPassword
+
+# Database
+ENV DB_NAME bdr-itwv-db-1.dev.uspto.gov
+ENV DB_USER bdr_admin
+ENV DB_PASS ChangeMe_123
+ENV DB_URI ptab:3306
+
+ENV MYSQL_VERSION 5.1.36
+
+
 
 # Set the WILDFLY_VERSION env variable
 ENV WILDFLY_VERSION 18.0.1.Final
@@ -46,6 +59,25 @@ RUN cd $HOME \
     && chown -R jboss:0 ${JBOSS_HOME} \
     && chmod -R g+rw ${JBOSS_HOME}
 
+# Configure Wildfly server
+ENV JBOSS_CLI /opt/jboss/wildfly/bin/jboss-cli.sh
+ENV DEPLOYMENT_DIR /opt/jboss/wildfly/standalone/deployments/
+RUN echo "=> Adding WildFly administrator"
+RUN $JBOSS_HOME/bin/add-user.sh -u $WILDFLY_USER -p $WILDFLY_PASS --silent
+
+
+RUN echo "=> Starting WildFly server" && \
+      bash -c '$JBOSS_HOME/bin/standalone.sh &' && \
+    echo "=> Waiting for the server to boot" && \
+      bash -c 'until `$JBOSS_CLI -c ":read-attribute(name=server-state)" 2> /dev/null | grep -q running`; do echo `$JBOSS_CLI -c ":read-attribute(name=server-state)" 2> /dev/null`; sleep 1; done' && \
+    echo "=> Downloading MySQL driver" && \
+      curl --location --output /tmp/mysql-connector-java-${MYSQL_VERSION}.jar --url http://search.maven.org/remotecontent?filepath=mysql/mysql-connector-java/${MYSQL_VERSION}/mysql-connector-java-${MYSQL_VERSION}.jar && \
+    echo "=> Adding MySQL module" && \
+    echo "=> Shutting down WildFly and Cleaning up" && \
+      $JBOSS_CLI --connect --command=":shutdown" && \
+      rm -rf $JBOSS_HOME/standalone/configuration/standalone_xml_history/ $JBOSS_HOME/standalone/log/* && \
+      rm -f /tmp/*.jar
+
 # Ensure signals are forwarded to the JVM process correctly for graceful shutdown
 ENV LAUNCH_JBOSS_IN_BACKGROUND true
 
@@ -53,16 +85,12 @@ ENV LAUNCH_JBOSS_IN_BACKGROUND true
 USER jboss
 
 # Expose the ports we're interested in
-EXPOSE 8080 9990
+EXPOSE 8080
 
 # Make Java 8 obey container resource limits, improve performance
-#ENV JAVA_OPTS "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:+UseG1GC -Djava.awt.headless=true"
+ENV JAVA_OPTS "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:+UseG1GC -Djava.awt.headless=true"
 
 # Set the default command to run on boot
 # This will boot WildFly in the standalone mode and bind to all interface
 CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0"]
-
-#
-# Copy the WAR file
-#
 COPY target/ROOT.war /opt/jboss/wildfly/standalone/deployments/ROOT.war
