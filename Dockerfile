@@ -9,7 +9,7 @@ FROM mcr.microsoft.com/java/jdk:8u242-zulu-centos
 FROM maven:3.6-jdk-11-slim as BUILD
 COPY . /src
 WORKDIR /src
-RUN mvn clean package 
+RUN mvn clean package -Popenshift
 
 
 # Install packages necessary to run WildFly
