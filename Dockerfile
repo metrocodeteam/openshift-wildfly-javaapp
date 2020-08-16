@@ -9,8 +9,8 @@ FROM mcr.microsoft.com/java/jdk:8u242-zulu-centos
 FROM maven:3.6-jdk-11-slim as BUILD
 COPY . /src
 WORKDIR /src
-RUN mvn clean package -Popenshift
-ADD target/ROOT.war /opt/jboss/wildfly/standalone/deployments/ROOT.war
+RUN mvn clean package 
+
 
 # Install packages necessary to run WildFly
 #RUN yum update -y && yum -y install bsdtar unzip && yum clean all
@@ -19,8 +19,7 @@ ADD target/ROOT.war /opt/jboss/wildfly/standalone/deployments/ROOT.war
 # The user ID 1000 is the default for the first "regular" user on Fedora/RHEL,
 # so there is a high chance that this ID will be equal to the current user
 # making it easier to use volumes (no permission issues)
-RUN groupadd -r jboss -g 1000 && useradd -u 1000 -r -g jboss -m -d /opt/jboss -s /sbin/nologin -c "JBoss user" jboss && \
-    chmod 755 /opt/jboss
+
 
 # Set the working directory to jboss' user home directory
 WORKDIR /opt/jboss
