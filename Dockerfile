@@ -82,10 +82,11 @@ RUN echo "=> Starting WildFly server" && \
 ENV LAUNCH_JBOSS_IN_BACKGROUND true
 
 # Set the current user for JBoss process
-USER jboss
+USER 1000
+EXPOSE 8080 9990
+
 
 # Expose the ports we're interested in
-EXPOSE 8080
 
 # Make Java 8 obey container resource limits, improve performance
 ENV JAVA_OPTS "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:+UseG1GC -Djava.awt.headless=true"
@@ -93,4 +94,4 @@ ENV JAVA_OPTS "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
 # Set the default command to run on boot
 # This will boot WildFly in the standalone mode and bind to all interface
 CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0"]
-COPY target/ROOT.war /opt/jboss/wildfly/standalone/deployments/ROOT.war
+COPY  target/ROOT.war /opt/jboss/wildfly/standalone/deployments/ROOT.war
