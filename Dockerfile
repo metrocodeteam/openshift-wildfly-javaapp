@@ -52,7 +52,7 @@ ENV LAUNCH_JBOSS_IN_BACKGROUND true
 
 # Set the current user for JBoss process
 USER jboss
-USER 1000
+USER 1001
 
 # Expose the ports we're interested in
 EXPOSE 8080 9990
