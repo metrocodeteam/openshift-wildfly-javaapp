@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: javaapp
-          image: image-registry.openshift-image-registry.svc:5000/javaapp/javaapp:latest
+          image: quay.io/satishchennu1/javaapp:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
