@@ -1,0 +1,33 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: javaapp
+  namespace: javaapp
+  labels:
+    app: javaapp
+spec:
+  selector:
+    app: javaapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: javaapp
+    spec:
+      containers:
+        - name: javaapp
+          image: image-registry.openshift-image-registry.svc:5000/javaapp/javaapp:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+  triggers:
+  - type: ConfigChange 
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - javaapp
+      from:
+        kind: ImageStreamTag
+        name: javaapp:latest
+    type: ImageChange
